@@ -86,7 +86,7 @@ def getSheetColumn(itemColumnToBeInserted, item):
             print(
                 f"Consider creating a new sheet. There are only {18278-num} cells available in the sheet for {item}."
             )
-        letter = (
+        letter = str(
             string.ascii_uppercase[int(((num - 26) / 676) - 1)]
             + string.ascii_uppercase[int(num % 676 / 26) - 1]
             + string.ascii_uppercase[int(num % 26)]
@@ -94,7 +94,7 @@ def getSheetColumn(itemColumnToBeInserted, item):
         # while num > 25:
         #   num = num - 25
         #  letter = letter + string.ascii_uppercase[num - 1]
-    return str(letter)
+    return letter
 
 
 def buildCreds():
