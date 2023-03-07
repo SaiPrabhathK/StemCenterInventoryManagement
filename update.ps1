@@ -8,7 +8,9 @@ Remove-Item -Path .\InventorySystem.exe -Force
 #Set-Location -Path C:\Users\$user\Desktop\InventoryRepo
 #### Create the application
 $command = 'python -m PyInstaller .\InventoryRepo\main.py -F --name InventorySystem --clean --add-data ".\InventoryRepo\callUpdate.ps1;.\" --add-data "S:\Documents\InventorySystemCredentials\credentials.json;.\" --distpath ".\"'
-Start-Process -FilePath "powershell" -ArgumentList $command && 'Read-Host "Please enter your age"' -Wait
+$read = 'Read-Host "Please enter your age"'
+$main = $command && $read
+Start-Process -FilePath "powershell" -ArgumentList $main -Wait
 #### Change location to desktop and delete the git repo
 #Set-Location ..\
 Remove-Item -Path .\InventoryRepo -Recurse -Force -Wait
