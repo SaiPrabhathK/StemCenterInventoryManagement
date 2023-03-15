@@ -212,6 +212,32 @@ def updateCurrentStatus():
 
 
 def updateValues(spreadsheet_id, range_name, value_input_option, _values):
+    """
+    
+
+    Parameters
+    ----------
+    spreadsheet_id : string
+        Alphanumeric string part of the url of the spreadsheet in 
+        Google Drive. (Refer to SHEETS dict above)
+    range_name : string
+        Spreadsheet cell range determined by rangeBuidler().
+    value_input_option : string
+        Controls how input data should be interpreted and whether input strings are parsed or not.
+    _values : list
+        check-in or check-out details for items in inventory.
+
+    Raises
+    ------
+    ValueError
+        Raises HttpError exception when update() fails.
+
+    Returns
+    -------
+    error : exception
+        HttpError will be raised when update() fails.
+
+    """
     try:
 
         service = build("sheets", "v4", credentials=globals_.creds, discoveryServiceUrl='https://sheets.googleapis.com/$discovery/rest?version=v4')
@@ -238,6 +264,22 @@ def updateValues(spreadsheet_id, range_name, value_input_option, _values):
 
 
 def getValues(spreadsheet_id, range_name):
+    """
+    
+
+    Parameters
+    ----------
+    spreadsheet_id : TYPE
+        DESCRIPTION.
+    range_name : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     try:
         service = build("sheets", "v4", credentials=globals_.creds, discoveryServiceUrl='https://sheets.googleapis.com/$discovery/rest?version=v4')
 
@@ -259,6 +301,20 @@ def getValues(spreadsheet_id, range_name):
 
 
 def sheetSelector(item):
+    """
+    
+
+    Parameters
+    ----------
+    item : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     if item.isnumeric():
         return SHEETS["Books"]["SheetID"]
     elif item[:2] in generalCategories:
@@ -272,6 +328,20 @@ def sheetSelector(item):
 
 # Gets the titles of all the sheets in a spreadsheet
 def getSheets(sheetId):
+    """
+    
+
+    Parameters
+    ----------
+    sheetId : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     try:
         service = build("sheets", "v4", credentials=globals_.creds, discoveryServiceUrl='https://sheets.googleapis.com/$discovery/rest?version=v4')
         request = service.spreadsheets().get(spreadsheetId=sheetId)
@@ -283,6 +353,20 @@ def getSheets(sheetId):
 
 
 def getCategory(item):
+    """
+    
+
+    Parameters
+    ----------
+    item : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     category = item[:2]
     if category in generalCategories:
         return generalCategories.index(category)
