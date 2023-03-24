@@ -235,7 +235,7 @@ def updateValues(spreadsheet_id, range_name, value_input_option, _values):
     Returns
     -------
     error : exception
-        HttpError will be raised when update() fails.
+        HttpError will be returned when building serivce fails.
 
     """
     try:
@@ -290,10 +290,14 @@ def getValues(spreadsheet_id, range_name):
             .execute()
         )
         #flatten the result into list of elements.
-        flatList = [element for innerList in result["values"] for element in innerList]
+        #flatList = [element for innerList in result["values"] for element in innerList]
         #flatten the result into list of list elements.
-        flatList2 = [element for element in result["values"]]
-        return flatList
+        #flatList2 = [element for element in result["values"]]
+        valuesDict = {
+            "items": [element[0] for element in result["values"]],
+            "count": [element[1] for element in result["values"]]
+            }
+        return valuesDict
     except HttpError as error:
         print(f"An error occurred: {error}")
         return error
