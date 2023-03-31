@@ -22,11 +22,9 @@ def main():
 
     """
     IF.buildCreds()
-    #books = IF.getValues("10nw_zsCl9vwJxDV5_dE7kP6kuw7PUhJ2ycEhsvtJTzw", "A:B")
-    #print(books['items'].index("9781338576030"))
-    #IF.retrieveBooksAndFlashCards()
-    #IF.retrieveCurrentStatus()
-    #IF.callMenu()
+    IF.retrieveBooksAndFlashCards()
+    IF.retrieveCurrentStatus()
+    IF.callMenu()
 
 
 if __name__ == "__main__":

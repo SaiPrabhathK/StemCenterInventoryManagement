@@ -87,7 +87,7 @@ def retrieveCurrentStatus():
 
     """
     globals_.currentStatus = getValues(
-        SHEETS["CurrentStatus"]["SheetID"], "Checked Out List!A:A"
+        SHEETS["CurrentStatus"]["SheetID"], "Checked Out List!A:B"
     )
 
 
@@ -289,8 +289,10 @@ def getValues(spreadsheet_id, range_name):
             .get(spreadsheetId=spreadsheet_id, range=range_name)
             .execute()
         )
+        if len(result["values"][0]) == 1:
         #flatten the result into list of elements.
-        #flatList = [element for innerList in result["values"] for element in innerList]
+            flatList = [element for innerList in result["values"] for element in innerList]
+            return flatList
         #flatten the result into list of list elements.
         #flatList2 = [element for element in result["values"]]
         valuesDict = {
@@ -461,7 +463,7 @@ def checkInItems(scannedList, checkedInDetails):
     ----------
     scannedList : list
         List of scanned item codes to be checked-in.
-    checkedInDetails : TYPE
+    checkedInDetails : string
         String containing Name of the person checking in and return
         date.
 
@@ -476,7 +478,7 @@ def checkInItems(scannedList, checkedInDetails):
         rangeName = rangeBuilder(item)
         if sheetID is None:
             print(
-                f'Spreadsheet associated with item code "{item}" could not be found. Please the check code again.'
+                f'Spreadsheet associated with item code "{item}" could not be found. Please check the code again.'
             )
             continue
         if rangeName is None:
@@ -530,7 +532,8 @@ def checkOutItems(scannedList, checkedOutDetails):
             continue
         if rangeName is None:
             continue
-        if item in globals_.currentStatus:
+        itemCountIndex = globals_.currentStatus['item'].index(item)
+        if item in globals_.currentStatus['item'] and globals_.currentStatus['count'][itemCountIndex] < 1:
             print(
                 f'This item: {item} is already "Checkedout".\nPlease check-in the item before checking it out or make sure you have selected the right option for this item.'
             )
@@ -541,7 +544,8 @@ def checkOutItems(scannedList, checkedOutDetails):
                 "USER_ENTERED",
                 [["Checked out" + "\n" + checkedOutDetails]],
             )
-            globals_.currentStatus.append(item)
+            globals_.currentStatus['item'].append(item)
+            globals_.currentStatus['count'][item]
             updateCurrentStatus()
     return
 
@@ -563,17 +567,19 @@ def callCheckOutItems():
     while True:
         newScan = input("--> ")
         if newScan == "0":
-            break
+            return
         elif newScan == "1":
             if len(scannedList) > 0:
                 details = input("Who's checking out? --> ")
                 if details == "0":
-                    break
+                    return
+                while(input("Do you want to proceed with the entered name? (y/n) --> ") != 'y'):
+                    details = input("Enter the name again --> ")
                 details = "Checked out by: " + details
                 expectedReturn = input("Enter expected return date --> ")
                 if expectedReturn == "0":
-                    break
-                expectedReturn = "Expected return: "
+                    return
+                expectedReturn = "Expected return: " + expectedReturn
                 currentTime = datetime.now()
                 checkedOutTime = currentTime.strftime("%d/%m/%Y %H:%M:%S")
                 checkedOutDetails = (
@@ -584,10 +590,10 @@ def callCheckOutItems():
                     + "Checked out at: "
                     + checkedOutTime
                 )
-                checkOutItems(scannedList, checkedOutDetails)
+                checkOutItems(scannedList.sort(), checkedOutDetails)
                 return
             else:
-                break
+                return
         else:
             scannedList.append(newScan)
     return
@@ -685,7 +691,7 @@ def retrieveBooksAndFlashCards():
     None.
 
     """
-    globals_.booksList = getValues(SHEETS["Books"]["SheetID"], "(B) Books!A:A")
+    globals_.booksList = getValues(SHEETS["Books"]["SheetID"], "(B) Books!A:B")
     globals_.flashCardsList = getValues(
-        SHEETS["Books"]["SheetID"], "(C) Flash Cards!A:A"
+        SHEETS["Books"]["SheetID"], "(C) Flash Cards!A:B"
     )
