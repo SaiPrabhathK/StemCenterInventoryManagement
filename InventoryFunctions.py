@@ -47,9 +47,9 @@ SHEETS = {
     },
 }
 
-generalCategories = ["GT", "GM", "GJ", "GR", "GE", "GO", "GG", "GP"]
+generalCategories = ["GT", "GM", "GJ", "GR", "GE", "GI", "GG", "GP"]
 
-PLTWCategories = ["PL", "PG", "PB", "PC", "PE"]
+PLTWCategories = ["PL", "PE", "PG", "PB", "PC"]
 
 def resourcePath(relativePath):
     """Get absolute path to resource, works for dev and for PyInstaller.
@@ -202,10 +202,10 @@ def updateCurrentStatus():
 
     """
     values = globals_.currentStatus
-    values = [[item] for item in values]
+    values = [[item, values[item]["count"]] for item in values]
     updateValues(
         SHEETS["CurrentStatus"]["SheetID"],
-        "Checked Out List!A:A",
+        "Checked Out List!A2:B",
         "USER_ENTERED",
         values,
     )
@@ -263,7 +263,7 @@ def updateValues(spreadsheet_id, range_name, value_input_option, _values):
         return error
 
 
-def getValues(spreadsheet_id, range_name):
+def getValues(spreadsheet_id, range_name, needCount=True):
     """
     
 
@@ -289,17 +289,29 @@ def getValues(spreadsheet_id, range_name):
             .get(spreadsheetId=spreadsheet_id, range=range_name)
             .execute()
         )
-        if len(result["values"][0]) == 1:
+        if not needCount:
         #flatten the result into list of elements.
             flatList = [element for innerList in result["values"] for element in innerList]
             return flatList
         #flatten the result into list of list elements.
         #flatList2 = [element for element in result["values"]]
-        valuesDict = {
-            "items": [element[0] for element in result["values"]],
-            "count": [element[1] for element in result["values"]]
-            }
-        return valuesDict
+        #for item in flatList2:
+        #    if not item[1].isdigit():
+        #        continue
+        #    item[1] = int(item[1])
+        try:
+            valuesDict2 = {
+                element[0]: {"index": index + 2, "count": int(element[1])} for index, element in enumerate(result["values"][1:])
+                }
+            return valuesDict2
+        except ValueError as error:
+            print(f"An error occurred: {error}")
+            return
+        #valuesDict = {
+         #   "items": [element[0] for element in result["values"]],
+          #  "count": [int(element[1]) for element in result["values"]]
+           # }
+        #return flatList2
     except HttpError as error:
         print(f"An error occurred: {error}")
         return error
@@ -382,7 +394,7 @@ def getCategory(item):
         return
 
 
-def rangeBuilder(item):
+def rangeBuilder(item, changeList):
     """
     
 
@@ -434,13 +446,14 @@ def rangeBuilder(item):
             return
         sheetId = sheetSelector(item)
         sheetTitle = getSheets(sheetId)["sheets"][itemCategory]["properties"]["title"]
-        sheetItemList = getValues(sheetId, sheetTitle + "!A:A")
-        if item not in sheetItemList:
+        if changeList:
+            globals_.sheetItemList = getValues(sheetId, sheetTitle + "!A:A")
+        if item not in globals_.sheetItemList:
             print(
                 f'The requested item code "{item}" could not be found. Please check the code again.'
             )
             return
-        itemRowNumber = str(sheetItemList.index(item) + 1)
+        itemRowNumber = str(globals_.sheetItemList.index(item) + 1)
         itemRowContents = getValues(
             sheetId, sheetTitle + "!" + itemRowNumber + ":" + itemRowNumber
         )
@@ -522,9 +535,15 @@ def checkOutItems(scannedList, checkedOutDetails):
 
     """
     retrieveCurrentStatus()
-    for item in scannedList:
+    listChange = True
+    for index, item in enumerate(scannedList):
         sheetID = sheetSelector(item)
-        rangeName = rangeBuilder(item)
+        if (index > 0):
+            if (scannedList[index - 1][:2] != item[:2]):
+                listChange = True
+            else:
+                listChange = False
+        rangeName = rangeBuilder(item, listChange)
         if sheetID is None:
             print(
                 f'Spreadsheet associated with item code "{item}" could not be found. Please check the code again.'
@@ -532,21 +551,19 @@ def checkOutItems(scannedList, checkedOutDetails):
             continue
         if rangeName is None:
             continue
-        itemCountIndex = globals_.currentStatus['item'].index(item)
-        if item in globals_.currentStatus['item'] and globals_.currentStatus['count'][itemCountIndex] < 1:
-            print(
-                f'This item: {item} is already "Checkedout".\nPlease check-in the item before checking it out or make sure you have selected the right option for this item.'
-            )
-        else:
+        if item in globals_.currentStatus['item']:
+            itemCountIndex = globals_.currentStatus['item'].index(item)
+            globals_.currentStatus['count'][itemCountIndex] += 1
             updateValues(
                 sheetID,
                 rangeName,
                 "USER_ENTERED",
                 [["Checked out" + "\n" + checkedOutDetails]],
             )
+        else:
             globals_.currentStatus['item'].append(item)
-            globals_.currentStatus['count'][item]
-            updateCurrentStatus()
+            globals_.currentStatus['count'].append(1)
+        updateCurrentStatus()
     return
 
 
@@ -590,7 +607,8 @@ def callCheckOutItems():
                     + "Checked out at: "
                     + checkedOutTime
                 )
-                checkOutItems(scannedList.sort(), checkedOutDetails)
+                scannedList.sort()
+                newCheckOutItems(scannedList, checkedOutDetails)
                 return
             else:
                 return
@@ -626,7 +644,8 @@ def callCheckInItems():
                 currentTime = datetime.now()
                 checkedInTime = currentTime.strftime("%d/%m/%Y %H:%M:%S")
                 checkedInDetails = details + ",\n" + "Checked in at: " + checkedInTime
-                checkInItems(scannedList, checkedInDetails)
+                scannedList.sort()
+                newCheckInItems(scannedList, checkedInDetails)
                 return
             else:
                 break
@@ -691,7 +710,130 @@ def retrieveBooksAndFlashCards():
     None.
 
     """
-    globals_.booksList = getValues(SHEETS["Books"]["SheetID"], "(B) Books!A:B")
+    globals_.booksList = getValues(SHEETS["Books"]["SheetID"], "(B) Books!A:A", False)
     globals_.flashCardsList = getValues(
-        SHEETS["Books"]["SheetID"], "(C) Flash Cards!A:B"
+        SHEETS["Books"]["SheetID"], "(C) Flash Cards!A:A", False
     )
+
+def newCheckOutItems(scannedList, checkedOutDetails):
+    retrieveCurrentStatus()
+    itemLists = dict()
+    sameItem = False
+    for index, item in enumerate(scannedList):
+        itemCat = str()
+        sheetTitle = str()
+        
+        if (index > 0 and (item == scannedList[index - 1])):
+            sameItem = True
+        else:
+            sameItem = False
+            
+        if item.isnumeric():
+            sheetId = SHEETS["Books"]["SheetID"]
+            if item in globals_.booksList:
+                itemCat = "books"
+                sheetTitle = "(B) Books!"
+            else:
+                itemCat = "flashcards"
+                sheetTitle = "(C) Flash Cards!"
+        else:
+            itemCat = item[:2]
+            itemCategory = getCategory(item)
+            
+            if itemCategory == None:
+                return
+            
+            sheetId = sheetSelector(item)
+            sheetTitle = getSheets(sheetId)["sheets"][itemCategory]["properties"]["title"] + '!'
+            
+        if itemCat not in itemLists:
+            itemLists[itemCat] = getValues(sheetId, sheetTitle + "A:B")
+        
+        if (sameItem and (itemLists[itemCat][item]["count"] > 0)): #keep track of count to update in actual sheets
+            itemLists[itemCat][item]["count"] -= 1
+            globals_.currentStatus[item]["count"] += 1
+            
+            if ((itemLists[itemCat][item]["count"] == 0) or (scannedList[index + 1] == item)):
+                updateValues(sheetId, sheetTitle + 'B' + str(itemLists[itemCat][item]["index"]), "USER_ENTERED", [[str(itemLists[itemCat][item]["count"])]])
+        
+        elif (itemLists[itemCat][item]["count"] <= 0):
+            print(f"No more of this item: '{item}' is available to checkout at this time.")                    
+        
+        else:
+            itemIndex = str(itemLists[itemCat][item]["index"])
+            itemLists[itemCat][item]["count"] -= 1
+            itemRowContents = getValues(sheetId, sheetTitle + itemIndex + ":" + itemIndex, False)
+            itemColumnToBeInserted = len(itemRowContents)
+            sheetColumnLetter = getSheetColumn(itemColumnToBeInserted, item)
+            
+            if item not in globals_.currentStatus:
+                globals_.currentStatus[item] = {"index": 0, "count": 0}
+            
+            globals_.currentStatus[item]["count"] += 1
+            updateValues(sheetId, sheetTitle + sheetColumnLetter + itemIndex, "USER_ENTERED", [[checkedOutDetails]])
+            updateValues(sheetId, sheetTitle + 'B' + itemIndex, "USER_ENTERED", [[str(itemLists[itemCat][item]["count"])]])
+    
+    updateCurrentStatus()
+    return
+
+def newCheckInItems(scannedList, checkedInDetails):
+    retrieveCurrentStatus()
+    itemLists = dict()
+    sameItem = False
+    emptyKey = ""
+    for index, item in enumerate(scannedList):
+        if item in globals_.currentStatus:
+            if(index > 0 and scannedList[index - 1] == item):
+                sameItem = True
+            else:
+                sameItem = False
+            
+            if item.isnumeric():
+                sheetId = SHEETS["Books"]["SheetID"]
+                if item in globals_.booksList:
+                    itemCat = "books"
+                    sheetTitle = "(B) Books!"
+                else:
+                    itemCat = "flashcards"
+                    sheetTitle = "(C) Flash Cards!"
+            else:
+                itemCat = item[:2]
+                itemCategory = getCategory(item)
+                
+                if itemCategory == None:
+                    return
+                
+                sheetId = sheetSelector(item)
+                sheetTitle = getSheets(sheetId)["sheets"][itemCategory]["properties"]["title"] + '!'
+                
+            if itemCat not in itemLists:
+                itemLists[itemCat] = getValues(sheetId, sheetTitle + "A:B")
+            
+            if sameItem:
+                globals_.currentStatus[item]["count"] -= 1
+                itemLists[itemCat][item]["count"] += 1
+                if ((index < len(scannedList) - 1) and (scannedList[index + 1] != item)):
+                    itemIndex = str(itemLists[itemCat][item]["index"])
+                    updateValues(sheetId, sheetTitle + 'B' + itemIndex, "USER_ENTERED", [[str(itemLists[itemCat][item]["count"])]])
+
+            else:
+                itemIndex = str(itemLists[itemCat][item]["index"])
+                globals_.currentStatus[item]["count"] -= 1
+                itemLists[itemCat][item]["count"] += 1
+                itemRowContents = getValues(sheetId, sheetTitle + itemIndex + ":" + itemIndex, False)
+                itemColumnToBeInserted = len(itemRowContents)
+                sheetColumnLetter = getSheetColumn(itemColumnToBeInserted, item)
+                updateValues(sheetId, sheetTitle + sheetColumnLetter + itemIndex, "USER_ENTERED", [[checkedInDetails]])
+                updateValues(sheetId, sheetTitle + 'B' + itemIndex, "USER_ENTERED", [[str(itemLists[itemCat][item]["count"])]])
+            
+            if globals_.currentStatus[item]["count"] == 0:
+                emptyKey += " "
+                globals_.currentStatus[item]["count"] = " "
+                globals_.currentStatus[emptyKey] = globals_.currentStatus[item]
+                del globals_.currentStatus[item]
+                print(f"All instances of item: {item} are returned.")            
+            
+        else:
+            print(f"Please check the itemcode: {item} again. The item is either not checkedout or doesnot exist or returned earlier.")
+    updateCurrentStatus()
+    return

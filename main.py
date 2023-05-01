@@ -22,8 +22,12 @@ def main():
 
     """
     IF.buildCreds()
+    #print(IF.getValues(IF.SHEETS["Books"]["SheetID"], "(B) Books!A:B"))
+    #IF.updateValues("10nw_zsCl9vwJxDV5_dE7kP6kuw7PUhJ2ycEhsvtJTzw", "(B) Books!D2", "USER_ENTERED", [["Hello"]])
     IF.retrieveBooksAndFlashCards()
     IF.retrieveCurrentStatus()
+#    IF.updateCurrentStatus()
+    #print(IF.globals_.flashCardsList)
     IF.callMenu()
 
 
