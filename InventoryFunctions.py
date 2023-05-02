@@ -202,11 +202,12 @@ def updateCurrentStatus():
 
     """
     values = globals_.currentStatus
-    values = [[item, values[item]["count"]] for item in values]
+    values = [[item, str(values[item]["count"])] for item in values]
+    values = [["" if  not item[0].isalnum() else item[0], "" if  not item[1].isdigit() else item[1]] for item in values]
     updateValues(
         SHEETS["CurrentStatus"]["SheetID"],
         "Checked Out List!A2:B",
-        "USER_ENTERED",
+        "RAW",
         values,
     )
 
@@ -741,7 +742,7 @@ def newCheckOutItems(scannedList, checkedOutDetails):
             itemCategory = getCategory(item)
             
             if itemCategory == None:
-                return
+                continue
             
             sheetId = sheetSelector(item)
             sheetTitle = getSheets(sheetId)["sheets"][itemCategory]["properties"]["title"] + '!'
@@ -753,7 +754,7 @@ def newCheckOutItems(scannedList, checkedOutDetails):
             itemLists[itemCat][item]["count"] -= 1
             globals_.currentStatus[item]["count"] += 1
             
-            if ((itemLists[itemCat][item]["count"] == 0) or (scannedList[index + 1] == item)):
+            if ((itemLists[itemCat][item]["count"] == 0) or (item in scannedList[index:])):
                 updateValues(sheetId, sheetTitle + 'B' + str(itemLists[itemCat][item]["index"]), "USER_ENTERED", [[str(itemLists[itemCat][item]["count"])]])
         
         elif (itemLists[itemCat][item]["count"] <= 0):
@@ -801,7 +802,7 @@ def newCheckInItems(scannedList, checkedInDetails):
                 itemCategory = getCategory(item)
                 
                 if itemCategory == None:
-                    return
+                    continue
                 
                 sheetId = sheetSelector(item)
                 sheetTitle = getSheets(sheetId)["sheets"][itemCategory]["properties"]["title"] + '!'
@@ -812,7 +813,7 @@ def newCheckInItems(scannedList, checkedInDetails):
             if sameItem:
                 globals_.currentStatus[item]["count"] -= 1
                 itemLists[itemCat][item]["count"] += 1
-                if ((index < len(scannedList) - 1) and (scannedList[index + 1] != item)):
+                if (item in scannedList[index:]):
                     itemIndex = str(itemLists[itemCat][item]["index"])
                     updateValues(sheetId, sheetTitle + 'B' + itemIndex, "USER_ENTERED", [[str(itemLists[itemCat][item]["count"])]])
 
@@ -828,7 +829,7 @@ def newCheckInItems(scannedList, checkedInDetails):
             
             if globals_.currentStatus[item]["count"] == 0:
                 emptyKey += " "
-                globals_.currentStatus[item]["count"] = " "
+                globals_.currentStatus[item]["count"] = ""
                 globals_.currentStatus[emptyKey] = globals_.currentStatus[item]
                 del globals_.currentStatus[item]
                 print(f"All instances of item: {item} are returned.")            

@@ -26,7 +26,7 @@ def main():
     #IF.updateValues("10nw_zsCl9vwJxDV5_dE7kP6kuw7PUhJ2ycEhsvtJTzw", "(B) Books!D2", "USER_ENTERED", [["Hello"]])
     IF.retrieveBooksAndFlashCards()
     IF.retrieveCurrentStatus()
-#    IF.updateCurrentStatus()
+    # IF.updateCurrentStatus()
     #print(IF.globals_.flashCardsList)
     IF.callMenu()
 
