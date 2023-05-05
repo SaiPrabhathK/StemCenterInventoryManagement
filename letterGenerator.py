@@ -14,7 +14,6 @@ while True:
     if num < 26:
         letter = string.ascii_uppercase[num]
     elif num < 702:
-
         letter = (
             string.ascii_uppercase[int(num / 26) - 1]
             + string.ascii_uppercase[int(num % 26)]
