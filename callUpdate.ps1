@@ -9,7 +9,7 @@ Stop-Process -Name InventorySystem
 $gitrepo = "https://github.com/SaiPrabhathK/StemCenterInventoryManagement.git"
 C:\"Program Files"\Git\bin\git clone $gitrepo InventoryRepo
 #### Change location to the cloned git repo
-Set-Location .\InventoryRepo
+#Set-Location .\InventoryRepo
 #### check and install necessary modules
 $modules = "pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib"
 if ( !($modules) )
@@ -22,4 +22,4 @@ if ( !($pyinstaller) )
     $pyinstaller
 }
 #### Start and run update script in the git repo to build the application from python scripts.
-Start-Process -FilePath "powershell" -ArgumentList ".\update.ps1"
+Start-Process -FilePath "powershell" -ArgumentList ".\InventoryRepo\update.ps1"
