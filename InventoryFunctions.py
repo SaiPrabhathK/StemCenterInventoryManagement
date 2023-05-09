@@ -280,8 +280,8 @@ def getValues(spreadsheet_id, range_name, needCount=True):
 
     Parameters
     ----------
-    spreadsheet_id : TYPE
-        DESCRIPTION.
+    spreadsheet_id : string
+        Alphanumeric string that represents a spreadsheet in the URL.
     range_name : TYPE
         DESCRIPTION.
 
@@ -500,17 +500,55 @@ def callCheckInItems():
 
 
 def callGetStatus():
-    print("This feature has not been implemented yet.")
+    print("\nCurrent Status")
     retrieveCurrentStatus()
-    for item in globals_.currentStatus:
-        pass
+    itemLists = dict()
+    for index, item in enumerate(globals_.currentStatus):
+        if (index > 1) and (index % 5 == 0):
+            if (
+                input(
+                    "Do you want to see the status of more items\n(press 'n' to cancel, any other character to proceed) -->"
+                )
+                == "n"
+            ):
+                return
+
+        if item.isnumeric():
+            sheetId = SHEETS["Books"]["SheetID"]
+
+            if item in globals_.booksList:
+                itemCat = "books"
+                sheetTitle = "(B) Books!"
+            else:
+                itemCat = "flashcards"
+                sheetTitle = "(C) Flash Cards!"
+        else:
+            itemCat = item[:2]
+            itemCategory = getCategory(item)
+
+            if itemCategory == None:
+                continue
+
+            sheetId = sheetSelector(item)
+            sheetTitle = (
+                getSheets(sheetId)["sheets"][itemCategory]["properties"]["title"] + "!"
+            )
+
+        if itemCat not in itemLists:
+            itemLists[itemCat] = getValues(sheetId, sheetTitle + "A:B")
+
+        itemIndex = str(itemLists[itemCat][item]["index"])
+        itemRowContents = getValues(
+            sheetId, sheetTitle + itemIndex + ":" + itemIndex, False
+        )
+        print(f"\nItem: {item}\nStatus: {itemRowContents[-1]}")
     return
 
 
 def callMenu():
     """Launches the Menu
 
-    Currently supports Check-in, Check-out, Quit, Clear screen
+    Currently supports Check-in, Check-out, Get Status, Quit, Clear screen
     and Update operations.
 
     Returns
@@ -522,17 +560,15 @@ def callMenu():
         print("\nWhat would you like to do?")
         print("1. Check-out Items (Requires scanning items)")
         print("2. Check-in Items (Requires scanning items)")
-        print("3. Get Item(s) Status (Not implemented yet)")
+        print("3. Get Item(s) Status")
         print("4. Quit Program!")
         print("5. Clear Screen")
         print("6. Update this Application")
         menuOptionInput = str(input("Enter the action you want to perform --> "))
         if menuOptionInput == "1":
             callCheckOutItems()
-            # updateSheets(action='checkout')
         elif menuOptionInput == "2":
             callCheckInItems()
-            # updateSheets(action='checkin')
         elif menuOptionInput == "3":
             callGetStatus()
         elif menuOptionInput == "4":
