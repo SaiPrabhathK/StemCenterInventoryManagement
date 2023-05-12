@@ -22,4 +22,4 @@ if ( !($pyinstaller) )
     $pyinstaller
 }
 #### Start and run update script in the git repo to build the application from python scripts.
-Start-Process -FilePath "powershell" -ArgumentList ".\InventoryRepo\update.ps1"
+Start-Process -FilePath "powershell" -ArgumentList ".\InventoryRepo\update.ps1" -Wait
